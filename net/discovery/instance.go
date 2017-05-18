@@ -22,7 +22,7 @@ type ServiceInstance struct {
 	Address             string      `json:"address"`
 	Port                *int        `json:"port"`
 	SslPort             *int        `json:"sslPort"`
-	Payload             *string     `json:"payload"`
+	Payload             *int        `json:"payload"`
 	RegistrationTimeUTC int64       `json:"registrationTimeUTC"`
 	ServiceType         ServiceType `json:"serviceType"`
 	UriSpec             *string     `json:"uriSpec"`
@@ -32,7 +32,7 @@ func NewSimpleServiceInstance(name, address string, port int) *ServiceInstance {
 	return NewServiceInstance(name, address, &port, nil, nil)
 }
 
-func NewServiceInstance(name, address string, port, ssl *int, payload *string) *ServiceInstance {
+func NewServiceInstance(name, address string, port, ssl *int, payload *int) *ServiceInstance {
 	id := uuid.NewV4().String()
 	t := time.Now().UnixNano() / int64(time.Millisecond)
 	return &ServiceInstance{name, id, address, port, ssl, payload, t, DYNAMIC, nil}
