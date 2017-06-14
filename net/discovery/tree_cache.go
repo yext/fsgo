@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"log"
+	"sync"
 
 	"github.com/curator-go/curator"
 	"github.com/samuel/go-zookeeper/zk"
@@ -10,6 +11,7 @@ import (
 type TreeCache struct {
 	*ServiceDiscovery
 
+	mu       sync.Mutex
 	existing map[string]map[string]*ServiceInstance
 
 	serviceListChanges  chan bool
@@ -18,7 +20,12 @@ type TreeCache struct {
 
 func NewTreeCache(s *ServiceDiscovery) *TreeCache {
 	existing := make(map[string]map[string]*ServiceInstance)
-	return &TreeCache{s, existing, make(chan bool, 10), make(chan string, 10)}
+	return &TreeCache{
+		ServiceDiscovery:    s,
+		existing:            existing,
+		serviceListChanges:  make(chan bool, 10),
+		instanceListChanges: make(chan string, 10),
+	}
 }
 
 func (t *TreeCache) Start() {
@@ -50,6 +57,9 @@ func (t *TreeCache) readAndWatch(service, verb string) {
 }
 
 func (t *TreeCache) readInstanceList(s string, children []string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	instances := make([]*ServiceInstance, 0, len(children))
 
 	existing, ok := t.existing[s]
