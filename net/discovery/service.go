@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"log"
+	"sync"
 	"time"
 
 	"github.com/curator-go/curator"
@@ -11,10 +12,12 @@ type ServiceDiscovery struct {
 	client curator.CuratorFramework
 
 	// Cache of watched services
-	Services map[string][]*ServiceInstance
+	servicesMu sync.Mutex // guards Services
+	Services   map[string][]*ServiceInstance
 
 	// Maintained service registrations
-	maintain map[string]*ServiceInstance
+	maintainMu sync.Mutex // guards maintain
+	maintain   map[string]*ServiceInstance
 
 	tree *TreeCache
 
@@ -102,6 +105,13 @@ func (s *ServiceDiscovery) pathForInstance(name, id string) string {
 }
 
 func (s *ServiceDiscovery) Register(service *ServiceInstance) error {
+	s.maintainMu.Lock()
+	defer s.maintainMu.Unlock()
+
+	return s.register(service)
+}
+
+func (s *ServiceDiscovery) register(service *ServiceInstance) error {
 	b, err := s.serializer.Serialize(service)
 	if err != nil {
 		return err
@@ -127,6 +137,13 @@ func (s *ServiceDiscovery) Register(service *ServiceInstance) error {
 }
 
 func (s *ServiceDiscovery) Unregister(service *ServiceInstance) error {
+	s.maintainMu.Lock()
+	defer s.maintainMu.Unlock()
+
+	return s.unregister(service)
+}
+
+func (s *ServiceDiscovery) unregister(service *ServiceInstance) error {
 	p := s.pathForInstance(service.Name, service.Id)
 	delete(s.maintain, service.Id)
 
@@ -135,8 +152,11 @@ func (s *ServiceDiscovery) Unregister(service *ServiceInstance) error {
 }
 
 func (s *ServiceDiscovery) ReregisterAll() error {
+	s.maintainMu.Lock()
+	defer s.maintainMu.Unlock()
+
 	for _, i := range s.maintain {
-		if err := s.Register(i); err != nil {
+		if err := s.register(i); err != nil {
 			return err
 		}
 	}
@@ -144,8 +164,11 @@ func (s *ServiceDiscovery) ReregisterAll() error {
 }
 
 func (s *ServiceDiscovery) UnregisterAll() error {
+	s.maintainMu.Lock()
+	defer s.maintainMu.Unlock()
+
 	for _, i := range s.maintain {
-		if err := s.Unregister(i); err != nil {
+		if err := s.unregister(i); err != nil {
 			return err
 		}
 	}
@@ -159,6 +182,8 @@ type ServiceDiscoveryInstanceProvider struct {
 }
 
 func (s *ServiceDiscoveryInstanceProvider) GetAllInstances() ([]*ServiceInstance, error) {
+	s.disco.servicesMu.Lock()
+	defer s.disco.servicesMu.Unlock()
 	return s.disco.Services[s.name], nil
 }
 

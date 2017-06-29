@@ -11,8 +11,8 @@ import (
 type TreeCache struct {
 	*ServiceDiscovery
 
-	mu       sync.Mutex
-	existing map[string]map[string]*ServiceInstance
+	existingMu sync.Mutex
+	existing   map[string]map[string]*ServiceInstance
 
 	serviceListChanges  chan bool
 	instanceListChanges chan string
@@ -57,8 +57,8 @@ func (t *TreeCache) readAndWatch(service, verb string) {
 }
 
 func (t *TreeCache) readInstanceList(s string, children []string) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	t.existingMu.Lock()
+	defer t.existingMu.Unlock()
 
 	instances := make([]*ServiceInstance, 0, len(children))
 
@@ -91,7 +91,10 @@ func (t *TreeCache) readInstanceList(s string, children []string) {
 		instances = append(instances, i)
 	}
 	t.existing[s] = existing
+
+	t.servicesMu.Lock()
 	t.Services[s] = instances
+	t.servicesMu.Unlock()
 }
 
 func (t *TreeCache) processServiceChanges() {
@@ -127,9 +130,12 @@ func (t *TreeCache) readServices(watching map[string]bool) {
 			watching[i] = true
 		}
 	}
+
+	t.servicesMu.Lock()
 	for i, _ := range t.Services {
 		if !found[i] {
 			delete(t.Services, i)
 		}
 	}
+	t.servicesMu.Unlock()
 }
