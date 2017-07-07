@@ -28,7 +28,7 @@ type ServiceDiscovery struct {
 
 	connChanges chan bool
 
-	connectedOnce bool
+	connectedAtLeastOnce bool
 }
 
 type Conn interface {
@@ -91,12 +91,12 @@ func (s *ServiceDiscovery) maintainConn() {
 			break
 		}
 		if c && c != prev {
-			if s.connectedOnce {
+			if s.connectedAtLeastOnce {
 				time.Sleep(5 * time.Second)
 			}
 			log.Println("Reconnected. Re-registering services.")
 			s.ReregisterAll()
-			s.connectedOnce = true
+			s.connectedAtLeastOnce = true
 		}
 		prev = c
 	}
