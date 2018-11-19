@@ -29,7 +29,7 @@ func NewTreeCache(s *ServiceDiscovery) *TreeCache {
 }
 
 func (t *TreeCache) Start() {
-	t.processServiceChanges()
+	//t.processServiceChanges()
 	go t.processInstanceChanges()
 }
 
@@ -42,6 +42,15 @@ func (t *TreeCache) processInstanceChanges() {
 		t.readAndWatch(s, "restarting")
 	}
 	log.Println("Done watching for instance changes")
+}
+
+func (t *TreeCache) WatchService(service string) {
+	t.servicesMu.Lock()
+	_, ok := t.Services[service]
+	t.servicesMu.Unlock()
+	if !ok {
+		t.readAndWatch(service, "watch")
+	}
 }
 
 func (t *TreeCache) readAndWatch(service, verb string) {
@@ -138,4 +147,13 @@ func (t *TreeCache) readServices(watching map[string]bool) {
 		}
 	}
 	t.servicesMu.Unlock()
+}
+
+func (s *TreeCache) Provider(name string) ServiceProvider {
+	return s.ProviderWithStrategy(name, NewRandomProvider())
+}
+
+func (s *TreeCache) ProviderWithStrategy(name string, strat ProviderStrategy) ServiceProvider {
+	s.WatchService(name)
+	return &ServiceDiscoveryInstanceProvider{name, s.ServiceDiscovery, strat}
 }
