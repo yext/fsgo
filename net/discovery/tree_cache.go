@@ -4,8 +4,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/curator-go/curator"
 	"github.com/samuel/go-zookeeper/zk"
+	"github.com/yext/curator"
 )
 
 type TreeCache struct {

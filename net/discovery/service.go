@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/curator-go/curator"
+	"github.com/yext/curator"
 )
 
 type ServiceDiscovery struct {
