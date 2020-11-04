@@ -4,7 +4,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/go-zookeeper/zk"
+	"github.com/yext/zk"
 	"github.com/yext/curator"
 )
 
