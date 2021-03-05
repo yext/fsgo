@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/apache/thrift/lib/go/thrift"
-	"github.com/foursquare/fsgo/report"
+	"github.com/yext/fsgo/report"
 )
 
 type ThriftOverHTTPHandler struct {

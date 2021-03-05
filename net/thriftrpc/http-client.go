@@ -1,6 +1,7 @@
 package thriftrpc
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -18,7 +19,7 @@ type sendProt struct {
 
 func (t *sendProt) Flush() error {
 	req, err := http.NewRequest("POST", t.url(), t.sendbuf)
-	req.Header.Set("Content-Length", string(t.sendbuf.Len()))
+	req.Header.Set("Content-Length", fmt.Sprint(t.sendbuf.Len()))
 	req.Header.Set("Content-Type", "application/x-thrift")
 
 	resp, err := t.transport.Do(req)
